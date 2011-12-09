@@ -24,12 +24,19 @@ function embedded_tweets_filter_info() {
  * Filter process callback for Embedded Tweets Filter.
  */
 function embedded_tweets_filter_process($text, $filter) {
-  preg_replace('/\[tweet .*\]/', $text, $matches);
-  drupal_set_message(print_r($matches, TRUE));
-  
-  $replace = preg_replace('/\[tweet .*\]/', '<blockquote class="twitter-tweet"><a href="$1">$1</a></blockquote>
-    <script src="//platform.twitter.com/widgets.js" charset="utf-8"></script>', $text);
-  return $replace;
+  if (preg_match_all('/\[tweet((\\s+)(.+))?( .+)?\]/isU', $text, $matches)) {
+    $tweet_url = $matches[4][0];
+    $tweet_request = file_get_contents("https://api.twitter.com/1/statuses/oembed.json?url=" . urlencode(trim($tweet_url)));
+    $tweet = json_decode($tweet_request);
+    $replacement = $tweet->html;
+/*
+    $replacement = 
+    '<blockquote class="twitter-tweet"><a href="' . $tweet_url . '">' . $tweet_url . '</a></blockquote>
+      <script src="//platform.twitter.com/widgets.js" charset="utf-8"></script>';
+*/
+    return str_replace($matches[0][0], $replacement, $text);
+  }
+  return $text;
 }
 
 /**
