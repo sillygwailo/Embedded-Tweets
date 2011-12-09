@@ -25,20 +25,25 @@ function embedded_tweets_filter_info() {
  */
 function embedded_tweets_filter_process($text, $filter) {
   global $language;
+  $languages = array('en', 'fr', 'de', 'id', 'it', 'ja', 'ko', 'pt', 'ru', 'es', 'tr');
+  if (in_array($language->language, $languages)) {
+    $lang = $language->language;
+  }
+  else {
+    $lang = 'en'; // Default to English if the site's language isn't in the list.
+  }
   if (preg_match_all('/\[tweet((\\s+)(.+))?( .+)?\]/isU', $text, $matches)) {
     foreach ($matches[4] as $tweet_index => $tweet_url) {
       $options = array(
-        'lang' => $language->language,
+        'lang' => $lang,
         'url' => trim($tweet_url),
       );
-
-      $query = http_build_query($options);
-      $tweet_request = file_get_contents("https://api.twitter.com/1/statuses/oembed.json?" . $query);
-      $tweet = json_decode($tweet_request);
+      $query = http_build_query($options, NULL, '&');
+      $tweet_request = drupal_http_request("https://api.twitter.com/1/statuses/oembed.json?" . $query);
+      $tweet = json_decode($tweet_request->data);
       $replacement = $tweet->html;
 /*
-    $replacement = 
-    '<blockquote class="twitter-tweet"><a href="' . $tweet_url . '">' . $tweet_url . '</a></blockquote>
+    $replacement = '<blockquote class="twitter-tweet"><a href="' . $tweet_url . '">' . $tweet_url . '</a></blockquote>
       <script src="//platform.twitter.com/widgets.js" charset="utf-8"></script>';
 */
       $text = str_replace($matches[0][$tweet_index], $replacement, $text);
