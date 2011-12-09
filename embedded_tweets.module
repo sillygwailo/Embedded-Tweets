@@ -25,16 +25,17 @@ function embedded_tweets_filter_info() {
  */
 function embedded_tweets_filter_process($text, $filter) {
   if (preg_match_all('/\[tweet((\\s+)(.+))?( .+)?\]/isU', $text, $matches)) {
-    $tweet_url = $matches[4][0];
-    $tweet_request = file_get_contents("https://api.twitter.com/1/statuses/oembed.json?url=" . urlencode(trim($tweet_url)));
-    $tweet = json_decode($tweet_request);
-    $replacement = $tweet->html;
+    foreach ($matches[4] as $tweet_index => $tweet_url) {
+      $tweet_request = file_get_contents("https://api.twitter.com/1/statuses/oembed.json?url=" . urlencode(trim($tweet_url)));
+      $tweet = json_decode($tweet_request);
+      $replacement = $tweet->html;
 /*
     $replacement = 
     '<blockquote class="twitter-tweet"><a href="' . $tweet_url . '">' . $tweet_url . '</a></blockquote>
       <script src="//platform.twitter.com/widgets.js" charset="utf-8"></script>';
 */
-    return str_replace($matches[0][0], $replacement, $text);
+      $text = str_replace($matches[0][$tweet_index], $replacement, $text);
+    }
   }
   return $text;
 }
