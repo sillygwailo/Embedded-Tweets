@@ -1,4 +1,3 @@
 name = Embedded Tweets Filter
 description = "Replaces the [tweet https://twitter.com/sillygwailo/status/139116091963211778] shortcode with the embedded code from Twitter"
-core = 7.x
-files[] = embedded_tweets.module
+core = 6.x

@@ -5,60 +5,51 @@
  * 'Replaces the [tweet https://twitter.com/sillygwailo/status/139116091963211778] shortcode with the embedded code from Twitter
  */
 
+
 /**
- * Implements hook_filter_info().
+ * Implementation of hook_filter().
  */
-function embedded_tweets_filter_info() {
-  $filters = array();
-  $filters['embedded_tweet'] = array(
-    'title' => t('Embedded Tweets Filter'), 
-    'description' => t('Replaces the [tweet https://twitter.com/sillygwailo/status/139116091963211778] shortcode with the embedded code from Twitter'),
-    'settings callback' => 'embedded_tweets_settings',
-    'process callback' => 'embedded_tweets_filter_process',
-    'tips callback' => 'embedded_tweets_tips',
-  );
-  return $filters;
-}
+ function embedded_tweets_filter($op, $delta = 0, $format = -1, $text = '') {
+   switch ($op) {
+     case 'list':
+       return array(0 => t('Embedded Tweets filter'));
+     case 'description':
+       return t('Replaces the [tweet https://twitter.com/sillygwailo/status/139116091963211778] shortcode with the embedded code from Twitter');
+     case 'process':
+       global $language;
+       $languages = array('en', 'fr', 'de', 'id', 'it', 'ja', 'ko', 'pt', 'ru', 'es', 'tr');
+       if (in_array($language->language, $languages)) {
+         $lang = $language->language;
+       }
+       else {
+         $lang = 'en'; // Default to English if the site's language isn't in the list.
+       }
+       if (preg_match_all('/\[tweet((\\s+)(.+))?( .+)?\]/isU', $text, $matches)) {
+         foreach ($matches[4] as $tweet_index => $tweet_url) {
+           $options = array(
+             'lang' => $lang,
+             'url' => trim($tweet_url),
+           );
+           $query = http_build_query($options, NULL, '&');
+           $tweet_request = drupal_http_request("https://api.twitter.com/1/statuses/oembed.json?" . $query);
+           $tweet = json_decode($tweet_request->data);
+           $replacement = $tweet->html;
+       /*
+           $replacement = '<blockquote class="twitter-tweet"><a href="' . $tweet_url . '">' . $tweet_url . '</a></blockquote>
+             <script src="//platform.twitter.com/widgets.js" charset="utf-8"></script>';
+       */
+           $text = str_replace($matches[0][$tweet_index], $replacement, $text);
+         }
+       }
+       return $text;
+     default:
+       return $text;
+   }
+ }
 
 /**
- * Filter process callback for Embedded Tweets Filter.
- */
-function embedded_tweets_filter_process($text, $filter) {
-  global $language;
-  if (preg_match_all('/\[tweet((\\s+)(.+))?( .+)?\]/isU', $text, $matches)) {
-    foreach ($matches[4] as $tweet_index => $tweet_url) {
-      $options = array(
-        'lang' => $language->language,
-        'url' => trim($tweet_url),
-      );
-
-      $query = http_build_query($options);
-      $tweet_request = file_get_contents("https://api.twitter.com/1/statuses/oembed.json?" . $query);
-      $tweet = json_decode($tweet_request);
-      $replacement = $tweet->html;
-/*
-    $replacement = 
-    '<blockquote class="twitter-tweet"><a href="' . $tweet_url . '">' . $tweet_url . '</a></blockquote>
-      <script src="//platform.twitter.com/widgets.js" charset="utf-8"></script>';
-*/
-      $text = str_replace($matches[0][$tweet_index], $replacement, $text);
-    }
-  }
-  return $text;
-}
-
-/**
- * Filter tips callback for Embedded Tweets Filter.
+ * Implementation of hook_filter_tips().
  */
 function embedded_tweets_tips($delta, $format, $long = FALSE) {
   return t('Replaces the [tweet https://twitter.com/sillygwailo/status/139116091963211778] shortcode with the embedded code from Twitter');
-}
-
-/**
- * Filter settings callback for Embedded Tweets Filter.
- */
-function embedded_tweets_settings($form, &$form_state, $filter, $format, $defaults) {
-  // TODO: alignment settings
-  $settings = array();
-  return $settings;
 }
