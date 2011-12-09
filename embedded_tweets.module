@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * @file
+ * 'Replaces the [tweet https://twitter.com/sillygwailo/status/139116091963211778] shortcode with the embedded code from Twitter
+ */
+
+/**
+ * Implements hook_filter_info().
+ */
+function embedded_tweets_filter_info() {
+  $filters = array();
+  $filters['embedded_tweet'] = array(
+    'title' => t('Embedded Tweets Filter'), 
+    'description' => t('Replaces the [tweet https://twitter.com/sillygwailo/status/139116091963211778] shortcode with the embedded code from Twitter'),
+    'settings callback' => 'embedded_tweets_settings',
+    'process callback' => 'embedded_tweets_filter_process',
+    'tips callback' => 'embedded_tweets_tips',
+  );
+  return $filters;
+}
+
+/**
+ * Filter process callback for Embedded Tweets Filter.
+ */
+function embedded_tweets_filter_process($text, $filter) {
+  preg_replace('/\[tweet .*\]/', $text, $matches);
+  drupal_set_message(print_r($matches, TRUE));
+  
+  $replace = preg_replace('/\[tweet .*\]/', '<blockquote class="twitter-tweet"><a href="$1">$1</a></blockquote>
+    <script src="//platform.twitter.com/widgets.js" charset="utf-8"></script>', $text);
+  return $replace;
+}
+
+/**
+ * Filter tips callback for Embedded Tweets Filter.
+ */
+function embedded_tweets_tips($delta, $format, $long = FALSE) {
+  return t('Replaces the [tweet https://twitter.com/sillygwailo/status/139116091963211778] shortcode with the embedded code from Twitter');
+}
+
+/**
+ * Filter settings callback for Embedded Tweets Filter.
+ */
+function embedded_tweets_settings($form, &$form_state, $filter, $format, $defaults) {
+  // TODO: alignment settings
+  $settings = array();
+  return $settings;
+}
